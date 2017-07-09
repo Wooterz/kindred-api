@@ -1,9 +1,10 @@
+// @flow
 const request = require('request')
 const chalk = require('chalk')
 const queryString = require('query-string')
 
-import IMC from './cache/in-memory-cache'
-import RC from './cache/redis-cache'
+import InMemoryCache from './cache/in-memory-cache'
+import RedisCache from './cache/redis-cache'
 
 import RateLimit from './rate-limit'
 
@@ -33,6 +34,28 @@ const ERROR_THRESHOLD = 400 // res code >= 400 = error
 const SECOND = 1000
 
 class Kindred {
+  // TODO
+  Champion: Object
+  ChampionMastery: Object
+  CurrentGame: Object
+  FeaturedGames: Object
+  Game: Object
+  League: Object
+  Challenger: Object
+  Master: Object
+  Static: Object
+  Status: Object
+  Match: Object
+  Matchlist: Object
+  MatchHistory: Object
+  RunesMasteries: Object
+  Runes: Object
+  Masteries: Object
+  Stats: Object
+  Summoner: Object
+
+  _summonerRequest: (data: { endUrl: string, region: ?string }, cb: callback) => void
+
   constructor({
     key, defaultRegion = REGIONS.NORTH_AMERICA,
     debug = false, showKey = false, showHeaders = false,
@@ -414,7 +437,7 @@ class Kindred {
    * @param {string} name; summoner name
    * @returns {string} sanitized name
    */
-  _sanitizeName(name) {
+  _sanitizeName(name: string): string {
     if (this._validName(name)) {
       return name.replace(/\s/g, '').toLowerCase()
     } else {
@@ -1428,8 +1451,20 @@ class Kindred {
     accountId, accId,
     id, summonerId, playerId,
     name
-  } = {}, cb) {
+  }: {
+    region?: ?string,
+    accountId?: ?number, accId?: ?number,
+    id?: ?number, summonerId?: ?number, playerId?: ?number,
+    name?: ?string,
+  } = {}, cb: callback) {
+    let endUrl = ''
     if (Number.isInteger(accountId || accId)) {
+      if (accountId) {
+        endUrl = accountId.toString()
+      }
+      if (accId) {
+        endUrl = accId.toString()
+      }
       return this._matchlistRequest({
         endUrl: `by-account/${accountId || accId}/recent`,
         region
@@ -1438,20 +1473,24 @@ class Kindred {
       return new Promise((resolve, reject) => {
         return this.getSummoner({ id, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._matchlistRequest({
-            endUrl: `by-account/${data.accountId}/recent`,
-            region
-          }, cb))
+          if (data && data.accountId) {
+            return resolve(this._matchlistRequest({
+              endUrl: `by-account/${data.accountId}/recent`,
+              region
+            }, cb))
+          }
         })
       })
     } else if (typeof name === 'string') {
       return new Promise((resolve, reject) => {
         return this.getSummoner({ name, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._matchlistRequest({
-            endUrl: `by-account/${data.accountId}/recent`,
-            region
-          }, cb))
+          if (data && data.accountId) {
+            return resolve(this._matchlistRequest({
+              endUrl: `by-account/${data.accountId}/recent`,
+              region
+            }, cb))
+          }
         })
       })
     } else {
@@ -1465,10 +1504,20 @@ class Kindred {
   getMatchTimeline({
     region,
     id, matchId
-  } = {}, cb) {
+  }: {
+    region?: ?string,
+    id?: ?number, matchId?: ?number
+  } = {}, cb: callback) {
+    let endUrl = ''
     if (Number.isInteger(id || matchId)) {
+      if (id) {
+        endUrl = id.toString()
+      }
+      if (matchId) {
+        endUrl = matchId.toString()
+      }
       return this._matchRequest({
-        endUrl: `timelines/by-match/${id || matchId}`,
+        endUrl: `timelines/by-match/${endUrl}`,
         region
       }, cb)
     } else {
@@ -1485,30 +1534,49 @@ class Kindred {
     accountId, accId,
     id, summonerId, playerId,
     name
-  } = {}, cb) {
+  }: {
+    region?: ?string,
+    accountId?: ?number, accId?: ?number,
+    id?: ?number, summonerId?: ?number, playerId?: ?number,
+    name?: ?string,
+  } = {}, cb: callback) {
+    let endUrl = ''
     if (Number.isInteger(accountId || accId)) {
       return new Promise((resolve, reject) => {
         return this.getSummoner({ accId: accountId || accId, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._runesMasteriesRequest({
-            endUrl: `runes/by-summoner/${data.id}`,
-            region
-          }, cb))
+          if (data && data.id) {
+            return resolve(this._runesMasteriesRequest({
+              endUrl: `runes/by-summoner/${data.id}`,
+              region
+            }, cb))
+          }
         })
       })
     } else if (Number.isInteger(id || summonerId || playerId)) {
+      if (id) {
+        endUrl = id.toString()
+      }
+      if (summonerId) {
+        endUrl = summonerId.toString()
+      }
+      if (playerId) {
+        endUrl = playerId.toString()
+      }
       return this._runesMasteriesRequest({
-        endUrl: `runes/by-summoner/${id || summonerId || playerId}`,
+        endUrl: `runes/by-summoner/${endUrl}`,
         region
       }, cb)
     } else if (typeof name === 'string') {
       return new Promise((resolve, reject) => {
         return this.getSummoner({ name, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._runesMasteriesRequest({
-            endUrl: `runes/by-summoner/${data.id}`,
-            region
-          }, cb))
+          if (data && data.id) {
+            return resolve(this._runesMasteriesRequest({
+              endUrl: `runes/by-summoner/${data.id}`,
+              region
+            }, cb))
+          }
         })
       })
     } else {
@@ -1525,30 +1593,49 @@ class Kindred {
     accountId, accId,
     id, summonerId, playerId,
     name
-  } = {}, cb) {
+  }: {
+    region?: ?string,
+    id?: ?number, summonerId?: ?number, playerId?: ?number,
+    accountId?: ?number, accId?: ?number,
+    name?: ?string,
+  } = {}, cb: callback) {
+    let endUrl = ''
     if (Number.isInteger(accountId || accId)) {
       return new Promise((resolve, reject) => {
         return this.getSummoner({ accId: accountId || accId, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._runesMasteriesRequest({
-            endUrl: `masteries/by-summoner/${data.id}`,
-            region
-          }, cb))
+          if (data && data.id) {
+            return resolve(this._runesMasteriesRequest({
+              endUrl: `masteries/by-summoner/${data.id}`,
+              region
+            }, cb))
+          }
         })
       })
     } else if (Number.isInteger(id || summonerId || playerId)) {
+      if (id) {
+        endUrl = id.toString()
+      }
+      if (summonerId) {
+        endUrl = summonerId.toString()
+      }
+      if (playerId) {
+        endUrl = playerId.toString()
+      }
       return this._runesMasteriesRequest({
-        endUrl: `masteries/by-summoner/${id || summonerId || playerId}`,
+        endUrl: `masteries/by-summoner/${endUrl}`,
         region
       }, cb)
     } else if (typeof name === 'string') {
       return new Promise((resolve, reject) => {
         return this.getSummoner({ name, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._runesMasteriesRequest({
-            endUrl: `masteries/by-summoner/${data.id}`,
-            region
-          }, cb))
+          if (data && data.id) {
+            return resolve(this._runesMasteriesRequest({
+              endUrl: `masteries/by-summoner/${data.id}`,
+              region
+            }, cb))
+          }
         })
       })
     } else {
@@ -1566,32 +1653,52 @@ class Kindred {
     id, summonerId, playerId,
     name,
     options
-  } = {}, cb) {
+  }: {
+    region?: ?string,
+    accountId?: ?number, accId?: ?number,
+    id?: ?number, summonerId?: ?number, playerId?: ?number,
+    name?: ?string,
+    options?: any,
+  } = {}, cb: callback) {
     this._verifyOptions(options, QUERY_PARAMS.STATS.RANKED)
-
+    let endUrl = ''
     if (Number.isInteger(accountId || accId)) {
       return new Promise((resolve, reject) => {
         return this.getSummoner({ accId: accountId || accId, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._statsRequest({
-            endUrl: `${data.id}/ranked`,
-            region, options
-          }, cb))
+          if (data && data.id) {
+            return resolve(this._statsRequest({
+              endUrl: `${data.id}/ranked`,
+              region, options
+            }, cb))
+          }
         })
       })
     } else if (Number.isInteger(id || summonerId || playerId)) {
+      let endUrl = '';
+      if (id) {
+        endUrl = id.toString()
+      }
+      if (summonerId) {
+        endUrl = summonerId.toString()
+      }
+      if (playerId) {
+        endUrl = playerId.toString()
+      }
       return this._statsRequest({
-        endUrl: `${id || summonerId || playerId}/ranked`,
+        endUrl: `${endUrl}/ranked`,
         region, options
       }, cb)
     } else if (typeof name === 'string') {
       return new Promise((resolve, reject) => {
         return this.getSummoner({ name, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._statsRequest({
-            endUrl: `${data.id}/ranked`,
-            region, options
-          }, cb))
+          if (data && data.id) {
+            return resolve(this._statsRequest({
+              endUrl: `${data.id}/ranked`,
+              region, options
+            }, cb))
+          }
         })
       })
     } else {
@@ -1608,32 +1715,51 @@ class Kindred {
     id, summonerId, playerId,
     name,
     options
-  } = {}, cb) {
+  }: {
+    region?: ?string,
+    accountId?: ?number, accId?: ?number,
+    id?: ?number, summonerId?: ?number, playerId?: ?number,
+    name?: ?string,
+    options?: any,
+  } = {}, cb: callback) {
     this._verifyOptions(options, QUERY_PARAMS.STATS.SUMMARY)
-
+    let endUrl = ''
     if (Number.isInteger(accountId || accId)) {
       return new Promise((resolve, reject) => {
         return this.getSummoner({ accId: accountId || accId, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._statsRequest({
-            endUrl: `${data.id}/summary`,
-            region, options
-          }, cb))
+          if (data && data.id) {
+            return resolve(this._statsRequest({
+              endUrl: `${data.id}/summary`,
+              region, options
+            }, cb))
+          }
         })
       })
     } else if (Number.isInteger(id || summonerId || playerId)) {
+      if (id) {
+        endUrl = id.toString()
+      }
+      if (summonerId) {
+        endUrl = summonerId.toString()
+      }
+      if (playerId) {
+        endUrl = playerId.toString()
+      }
       return this._statsRequest({
-        endUrl: `${id || summonerId || playerId}/summary`,
+        endUrl: `${endUrl}/summary`,
         region, options
       }, cb)
     } else if (typeof name === 'string') {
       return new Promise((resolve, reject) => {
         return this.getSummoner({ name, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._statsRequest({
-            endUrl: `${data.id}/summary`,
-            region, options
-          }, cb))
+          if (data && data.id) {
+            return resolve(this._statsRequest({
+              endUrl: `${data.id}/summary`,
+              region, options
+            }, cb))
+          }
         })
       })
     } else {
@@ -1650,22 +1776,45 @@ class Kindred {
     id, summonerId, playerId,
     accountId, accId,
     name
-  } = {}, cb) {
+  }: {
+    region?: ?string,
+    id?: ?number, summonerId?: ?number, playerId?: ?number,
+    accountId?: ?number, accId?: ?number,
+    name?: ?string
+  } = {}, cb: callback) {
+    let endUrl = ''
     if (Number.isInteger(id || summonerId || playerId)) {
+      if (id) {
+        endUrl = id.toString()
+      }
+      if (summonerId) {
+        endUrl = summonerId.toString()
+      }
+      if (playerId) {
+        endUrl = playerId.toString()
+      }
       return this._summonerRequest({
-        endUrl: `${id || summonerId || playerId}`,
+        endUrl,
         region
       }, cb)
-    } else if (typeof name === 'string') {
+    } else if (name && typeof name === 'string') {
       return this._summonerRequest({
         endUrl: `by-name/${this._sanitizeName(name)}`,
         region
       }, cb)
     } else if (Number.isInteger(accountId || accId)) {
-      return this._summonerRequest({
-        endUrl: `by-account/${accountId || accId}`,
-        region
-      }, cb)
+      if (accountId) {
+        return this._summonerRequest({
+          endUrl: `by-account/${accountId || accId}`,
+          region
+        }, cb)
+      }
+      if (accId) {
+        return this._summonerRequest({
+          endUrl: `by-account/${accId}`,
+          region
+        }, cb)
+      }
     } else {
       return this._logError(
         this.getSummoner.name,
@@ -1675,20 +1824,20 @@ class Kindred {
   }
 
   /* Non-parameter-destructuring-thingy functions */
-  listChampions(options, region, cb) {
+  listChampions(options: Object, region: string, cb: callback) {
     if (isFunction(options)) {
-      cb = options
-      options = undefined
+      cb = (options: any)
+      options = undefined_
     }
 
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     if (typeof options === 'string') {
       region = options
-      options = undefined
+      options = undefined_
     }
 
     return this.Champion.all({
@@ -1696,10 +1845,10 @@ class Kindred {
     }, cb)
   }
 
-  getChampionById(id, region, cb) {
+  getChampionById(id: number, region: string, cb: callback) {
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     return this.Champion.get({
@@ -1707,10 +1856,10 @@ class Kindred {
     }, cb)
   }
 
-  listFeaturedGames(region, cb) {
+  listFeaturedGames(region: string, cb: callback) {
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     return this.FeaturedGames.get({
@@ -1718,25 +1867,25 @@ class Kindred {
     }, cb)
   }
 
-  listChallengers(queue, region, cb) {
+  listChallengers(queue: string, region: string, cb: callback) {
     if (checkValidRegion(queue)) {
       if (isFunction(region)) {
-        cb = region
-        region = undefined
+        cb = (region: any)
+        region = undefined_
       }
 
-      region = queue
-      queue = undefined
+      region = (queue: any)
+      queue = undefined_
     }
 
     if (isFunction(queue)) {
-      cb = queue
-      queue = undefined
+      cb = (queue: any)
+      queue = undefined_
     }
 
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     return this.League.challengers({
@@ -1744,25 +1893,25 @@ class Kindred {
     }, cb)
   }
 
-  listMasters(queue, region, cb) {
+  listMasters(queue: string, region: string, cb: callback) {
     if (checkValidRegion(queue)) {
       if (isFunction(region)) {
-        cb = region
-        region = undefined
+        cb = (region: any)
+        region = undefined_
       }
 
-      region = queue
-      queue = undefined
+      region = (queue: any)
+      queue = undefined_
     }
 
     if (isFunction(queue)) {
-      cb = queue
-      queue = undefined
+      cb = (queue: any)
+      queue = undefined_
     }
 
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     return this.League.masters({
@@ -1770,10 +1919,10 @@ class Kindred {
     }, cb)
   }
 
-  getSummonerByAccountId(accId, region, cb) {
+  getSummonerByAccountId(accId: number, region: string, cb: callback) {
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     return this.Summoner.get({
@@ -1782,10 +1931,10 @@ class Kindred {
     }, cb)
   }
 
-  getSummonerById(id, region, cb) {
+  getSummonerById(id: number, region: string, cb: callback) {
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     return this.Summoner.get({
@@ -1794,10 +1943,10 @@ class Kindred {
     }, cb)
   }
 
-  getSummonerByName(name, region, cb) {
+  getSummonerByName(name: string, region: string, cb: callback) {
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     return this.Summoner.get({
@@ -1806,10 +1955,10 @@ class Kindred {
     }, cb)
   }
 
-  getMasteriesByAccountId(accId, region, cb) {
+  getMasteriesByAccountId(accId: number, region: string, cb: callback) {
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     return this.Masteries.get({
@@ -1818,10 +1967,10 @@ class Kindred {
     }, cb)
   }
 
-  getMasteriesById(id, region, cb) {
+  getMasteriesById(id: number, region: string, cb: callback) {
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     return this.Masteries.get({
@@ -1830,10 +1979,10 @@ class Kindred {
     }, cb)
   }
 
-  getMasteriesByName(name, region, cb) {
+  getMasteriesByName(name: string, region: string, cb: callback) {
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     return this.Masteries.get({
@@ -1842,10 +1991,10 @@ class Kindred {
     }, cb)
   }
 
-  getMatchById(id, region, cb) {
+  getMatchById(id: number, region: string, cb: callback) {
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     return this.Match.get({
@@ -1854,20 +2003,20 @@ class Kindred {
     }, cb)
   }
 
-  getMatchlistByAccountId(accId, options, region, cb) {
+  getMatchlistByAccountId(accId: number, options: Object, region: string, cb: callback) {
     if (isFunction(options)) {
-      cb = options
-      options = undefined
+      cb = (options: any)
+      options = undefined_
     }
 
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     if (typeof options === 'string') {
       region = options
-      options = undefined
+      options = undefined_
     }
 
     return this.Matchlist.get({
@@ -1875,20 +2024,20 @@ class Kindred {
     }, cb)
   }
 
-  getMatchlistById(id, options, region, cb) {
+  getMatchlistById(id: number, options: Object, region: string, cb: callback) {
     if (isFunction(options)) {
-      cb = options
-      options = undefined
+      cb = (options: any)
+      options = undefined_
     }
 
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     if (typeof options === 'string') {
       region = options
-      options = undefined
+      options = undefined_
     }
 
     return this.Matchlist.get({
@@ -1896,20 +2045,20 @@ class Kindred {
     }, cb)
   }
 
-  getMatchlistByName(name, options, region, cb) {
+  getMatchlistByName(name: string, options: Object, region: string, cb: callback) {
     if (isFunction(options)) {
-      cb = options
-      options = undefined
+      cb = (options: any)
+      options = undefined_
     }
 
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     if (typeof options === 'string') {
       region = options
-      options = undefined
+      options = undefined_
     }
 
     return this.Matchlist.get({
@@ -1917,10 +2066,10 @@ class Kindred {
     }, cb)
   }
 
-  getMatchTimelineById(id, region, cb) {
+  getMatchTimelineById(id: number, region: string, cb: callback) {
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     return this.Match.timeline({
@@ -1928,10 +2077,10 @@ class Kindred {
     }, cb)
   }
 
-  getRunesByAccountId(accId, region, cb) {
+  getRunesByAccountId(accId: number, region: string, cb: callback) {
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     return this.Runes.get({
@@ -1940,10 +2089,10 @@ class Kindred {
     }, cb)
   }
 
-  getRunesById(id, region, cb) {
+  getRunesById(id: number, region: string, cb: callback) {
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     return this.Runes.get({
@@ -1952,10 +2101,10 @@ class Kindred {
     }, cb)
   }
 
-  getRunesByName(name, region, cb) {
+  getRunesByName(name: string, region: string, cb: callback) {
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     return this.Runes.get({
@@ -1964,20 +2113,20 @@ class Kindred {
     }, cb)
   }
 
-  getStaticChampionList(options, region, cb) {
+  getStaticChampionList(options: Object, region: string, cb: callback) {
     if (isFunction(options)) {
-      cb = options
-      options = undefined
+      cb = (options: any)
+      options = undefined_
     }
 
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     if (typeof options === 'string') {
       region = options
-      options = undefined
+      options = undefined_
     }
 
     return this.Static.champions({
@@ -1985,20 +2134,20 @@ class Kindred {
     }, cb)
   }
 
-  getStaticChampionById(id, options, region, cb) {
+  getStaticChampionById(id: number, options: Object, region: string, cb: callback) {
     if (isFunction(options)) {
-      cb = options
-      options = undefined
+      cb = (options: any)
+      options = undefined_
     }
 
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     if (typeof options === 'string') {
       region = options
-      options = undefined
+      options = undefined_
     }
 
     return this.Static.champion({
@@ -2006,20 +2155,20 @@ class Kindred {
     }, cb)
   }
 
-  getStaticItemList(options, region, cb) {
+  getStaticItemList(options: Object, region: string, cb: callback) {
     if (isFunction(options)) {
-      cb = options
-      options = undefined
+      cb = (options: any)
+      options = undefined_
     }
 
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     if (typeof options === 'string') {
       region = options
-      options = undefined
+      options = undefined_
     }
 
     return this.Static.items({
@@ -2027,20 +2176,20 @@ class Kindred {
     }, cb)
   }
 
-  getStaticItemById(id, options, region, cb) {
+  getStaticItemById(id: number, options: Object, region: string, cb: callback) {
     if (isFunction(options)) {
-      cb = options
-      options = undefined
+      cb = (options: any)
+      options = undefined_
     }
 
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     if (typeof options === 'string') {
       region = options
-      options = undefined
+      options = undefined_
     }
 
     return this.Static.item({
@@ -2048,20 +2197,20 @@ class Kindred {
     }, cb)
   }
 
-  getStaticLanguageStringList(options, region, cb) {
+  getStaticLanguageStringList(options: Object, region: string, cb: callback) {
     if (isFunction(options)) {
-      cb = options
-      options = undefined
+      cb = (options: any)
+      options = undefined_
     }
 
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     if (typeof options === 'string') {
       region = options
-      options = undefined
+      options = undefined_
     }
 
     return this.Static.languageStrings({
@@ -2069,10 +2218,10 @@ class Kindred {
     }, cb)
   }
 
-  getStaticLanguageList(region, cb) {
+  getStaticLanguageList(region: string, cb: callback) {
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     return this.Static.languages({
@@ -2080,20 +2229,20 @@ class Kindred {
     }, cb)
   }
 
-  getStaticMapList(options, region, cb) {
+  getStaticMapList(options: Object, region: string, cb: callback) {
     if (isFunction(options)) {
-      cb = options
-      options = undefined
+      cb = (options: any)
+      options = undefined_
     }
 
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     if (typeof options === 'string') {
       region = options
-      options = undefined
+      options = undefined_
     }
 
     return this.Static.mapData({
@@ -2101,20 +2250,20 @@ class Kindred {
     }, cb)
   }
 
-  getStaticMasteryList(options, region, cb) {
+  getStaticMasteryList(options: Object, region: string, cb: callback) {
     if (isFunction(options)) {
-      cb = options
-      options = undefined
+      cb = (options: any)
+      options = undefined_
     }
 
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     if (typeof options === 'string') {
       region = options
-      options = undefined
+      options = undefined_
     }
 
     return this.Static.masteries({
@@ -2122,20 +2271,20 @@ class Kindred {
     }, cb)
   }
 
-  getStaticMasteryById(id, options, region, cb) {
+  getStaticMasteryById(id: number, options: Object, region: string, cb: callback) {
     if (isFunction(options)) {
-      cb = options
-      options = undefined
+      cb = (options: any)
+      options = undefined_
     }
 
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     if (typeof options === 'string') {
-      region = options
-      options = undefined
+      region = (options: any)
+      options = undefined_
     }
 
     return this.Static.mastery({
@@ -2143,20 +2292,20 @@ class Kindred {
     }, cb)
   }
 
-  getStaticProfileIconList(options, region, cb) {
+  getStaticProfileIconList(options: Object, region: string, cb: callback) {
     if (isFunction(options)) {
-      cb = options
-      options = undefined
+      cb = (options: any)
+      options = undefined_
     }
 
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     if (typeof options === 'string') {
-      region = options
-      options = undefined
+      region = (options: any)
+      options = undefined_
     }
 
     return this.Static.profileIcons({
@@ -2164,10 +2313,10 @@ class Kindred {
     }, cb)
   }
 
-  getStaticRealmList(region, cb) {
+  getStaticRealmList(region: string, cb: callback) {
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     return this.Static.realm({
@@ -2175,20 +2324,20 @@ class Kindred {
     }, cb)
   }
 
-  getStaticRuneList(options, region, cb) {
+  getStaticRuneList(options: Object, region: string, cb: callback) {
     if (isFunction(options)) {
-      cb = options
-      options = undefined
+      cb = (options: any)
+      options = undefined_
     }
 
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     if (typeof options === 'string') {
-      region = options
-      options = undefined
+      region = (options: any)
+      options = undefined_
     }
 
     return this.Static.runes({
@@ -2196,20 +2345,20 @@ class Kindred {
     }, cb)
   }
 
-  getStaticRuneById(id, options, region, cb) {
+  getStaticRuneById(id: number, options: Object, region: string, cb: callback) {
     if (isFunction(options)) {
-      cb = options
-      options = undefined
+      cb = (options: any)
+      options = undefined_
     }
 
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     if (typeof options === 'string') {
-      region = options
-      options = undefined
+      region = (options: any)
+      options = undefined_
     }
 
     return this.Static.rune({
@@ -2217,20 +2366,20 @@ class Kindred {
     }, cb)
   }
 
-  getStaticSummonerSpellList(options, region, cb) {
+  getStaticSummonerSpellList(options: Object, region: string, cb: callback) {
     if (isFunction(options)) {
-      cb = options
-      options = undefined
+      cb = (options: any)
+      options = undefined_
     }
 
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     if (typeof options === 'string') {
       region = options
-      options = undefined
+      options = undefined_
     }
 
     return this.Static.spells({
@@ -2238,20 +2387,20 @@ class Kindred {
     }, cb)
   }
 
-  getStaticSummonerSpellById(id, options, region, cb) {
+  getStaticSummonerSpellById(id: number, options: Object, region: string, cb: callback) {
     if (isFunction(options)) {
-      cb = options
-      options = undefined
+      cb = (options: any)
+      options = undefined_
     }
 
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     if (typeof options === 'string') {
       region = options
-      options = undefined
+      options = undefined_
     }
 
     return this.Static.spell({
@@ -2259,10 +2408,10 @@ class Kindred {
     }, cb)
   }
 
-  getStaticVersionList(region, cb) {
+  getStaticVersionList(region: string, cb: callback) {
     if (isFunction(region)) {
-      cb = region
-      region = undefined
+      cb = (region: any)
+      region = undefined_
     }
 
     return this.Static.versions({
@@ -2271,10 +2420,10 @@ class Kindred {
   }
 }
 
-function QuickStart(apiKey, region, debug) {
+function QuickStart(apiKey: string, region: string, debug: boolean) {
   if (typeof region == 'boolean') {
     debug = region
-    region = undefined
+    region = undefined_
   }
 
   return new Kindred({
@@ -2282,17 +2431,17 @@ function QuickStart(apiKey, region, debug) {
     defaultRegion: region,
     debug,
     limits: LIMITS.DEV,
-    cache: new IMC()
+    cache: new InMemoryCache()
   })
 }
 
-function print(err, data) {
+function print(err: string, data: Object) {
   if (err) console.log(err)
   else console.log(data)
 }
 
-const InMemoryCache = IMC
-const RedisCache = RC
+type callback = (string, ?Object) => void
+const undefined_ = (undefined: any)
 
 export default {
   Kindred,
