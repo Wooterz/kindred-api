@@ -17,7 +17,6 @@ before_install:
 
 after_success:
     - codecov
-    - flow --show-all-errors
 
 services:
     - redis-server

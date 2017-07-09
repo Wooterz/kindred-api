@@ -1,6 +1,9 @@
 // @flow
+// $FlowFixMe
 const request = require('request')
+// $FlowFixMe
 const chalk = require('chalk')
+// $FlowFixMe
 const queryString = require('query-string')
 
 import InMemoryCache from './cache/in-memory-cache'
@@ -54,7 +57,55 @@ class Kindred {
   Stats: Object
   Summoner: Object
 
-  _summonerRequest: (data: { endUrl: string, region: ?string }, cb: callback) => void
+  _sanitizeName: (string) => any
+
+  key: string
+  defaultRegion: string
+  CACHE_TIMERS: {
+    CHAMPION: number,
+    CHAMPION_MASTERY: number,
+    CURRENT_GAME: number,
+    FEATURED_GAMES: number,
+    GAME: number,
+    LEAGUE: number,
+    STATIC: number,
+    STATUS: number,
+    MATCH: number,
+    MATCHLIST: number,
+    RUNES_MASTERIES: number,
+    SPECTATOR: number,
+    STATS: number,
+    SUMMONER: number,
+    TOURNAMENT_STUB: number,
+    TOURNAMENT: number
+  }
+  numberOfRetriesBeforeBreak: number
+  showHeaders: boolean
+  retryOptions: {
+    auto: boolean,
+    numberOfRetriesBeforeBreak: number
+  }
+  timeout: number
+  showKey: boolean
+  debug: boolean
+  limits: {
+    br: Array<any>,
+    euw: Array<any>,
+    kr: Array<any>,
+    lan: Array<any>,
+    las: Array<any>,
+    na: Array<any>,
+    oce: Array<any>,
+    ru: Array<any>,
+    tr: Array<any>,
+    jp: Array<any>,
+    euw: Array<any>,
+  }
+  cache: {
+    get: (data: { key: string }, callback) => void,
+    set: (data: { key: string, ttl: number }, any) => void
+  }
+  spread: boolean
 
   constructor({
     key, defaultRegion = REGIONS.NORTH_AMERICA,
@@ -66,6 +117,17 @@ class Kindred {
     },
     timeout,
     cache, cacheTTL
+  }: {
+    key: string,
+    defaultRegion?: string,
+    debug?: boolean, showKey?: boolean, showHeaders?: boolean,
+    limits?: any, spread?: boolean,
+    retryOptions?: {
+      auto?: boolean,
+      numberOfRetriesBeforeBreak?: number
+    },
+    timeout?: number,
+    cache?: any, cacheTTL?: number
   } = {}) {
     if (arguments.length === 0 || typeof arguments[0] !== 'object' || typeof key !== 'string') {
       throw new Error(
@@ -75,9 +137,9 @@ class Kindred {
 
     this.key = key
 
-    this.defaultRegion = checkValidRegion(defaultRegion) ? defaultRegion : undefined
+    this.defaultRegion = checkValidRegion(defaultRegion) ? defaultRegion : ''
 
-    if (!this.defaultRegion) {
+    if (this.defaultRegion.length === 0) {
       throw new Error(
         `${chalk.red(`setRegion() by Kindred failed: ${chalk.yellow(defaultRegion)} is an invalid region.`)}\n`
         + `${(chalk.red(`Try importing ${chalk.yellow('require(\'kindred-api\').REGIONS')} and using one of those values instead.`))}`
@@ -90,7 +152,7 @@ class Kindred {
 
     if (cache) {
       this.cache = cache
-      this.CACHE_TIMERS = cacheTTL ? cacheTTL : CACHE_TIMERS
+      this.CACHE_TIMERS = cacheTTL ? (cacheTTL: any) : CACHE_TIMERS
     } else {
       this.cache = {
         get: (args, cb) => cb(null, null),
@@ -107,10 +169,10 @@ class Kindred {
         throw new Error()
       }
 
-      this.limits = {}
-      this.spread = spread
-      this.retryOptions = retryOptions
-      this.timeout = timeout
+      this.limits = ({}: any)
+      this.spread = (spread: any)
+      this.retryOptions = (retryOptions: any)
+      this.timeout = (timeout: any)
 
       // hack because retryOptions becomes undefined when returning
       // for some reason
@@ -420,7 +482,7 @@ class Kindred {
    * @param {string} region; some region string
    * @returns {boolean} true if client can make a request
    */
-  canMakeRequest(region) {
+  canMakeRequest(region: string) {
     const spread = this.spread
       ? this.limits[region][2].requestAvailable()
       : true
@@ -437,10 +499,10 @@ class Kindred {
    * @param {string} name; summoner name
    * @returns {string} sanitized name
    */
-  _sanitizeName(name: string): string {
+  _sanitizeName(name: string) {
     if (this._validName(name)) {
       return name.replace(/\s/g, '').toLowerCase()
-    } else {
+    } else {1
       this._logError(
         this._validName.name,
         `Name ${chalk.yellow(name)} is not valid. Request failed.`
@@ -453,7 +515,7 @@ class Kindred {
    * @param {string} name; summoner name
    * @returns {boolean} true if both rules are adhered
    */
-  _validName(name) {
+  _validName(name: string) {
     return re.test(name) && name.length <= 16
   }
 
@@ -463,7 +525,7 @@ class Kindred {
    * @param {int} ttl; some integer
    * @param {object} body; some object of data
    */
-  _cacheData(key, ttl, body) {
+  _cacheData(key: string, ttl: number, body: any) {
     if (validTTL(ttl))
       this.cache.set({ key, ttl }, body)
   }
@@ -474,7 +536,7 @@ class Kindred {
    * @param {string} region; region string
    * @returns {string} a request url
    */
-  _makeUrl(query, region) {
+  _makeUrl(query: string, region: string) {
     const oldPrefix = `api/lol/${region}/`
     const prefix = 'lol/'
     const base = 'api.riotgames.com'
@@ -496,7 +558,7 @@ class Kindred {
    * @param {string} endUrl; the string after the url origin
    * @returns {string} options stringified (form depends on endpoint version for now)
    */
-  _stringifyOptions(options, endUrl) {
+  _stringifyOptions(options: any, endUrl: string) {
     let stringifiedOpts = ''
 
     // Returns stringified opts with appended key-value pair.
@@ -529,7 +591,7 @@ class Kindred {
    * @param {string} key; an API key
    * @returns {string} the full url used to make requests
    */
-  _constructFullUrl(reqUrl, key) {
+  _constructFullUrl(reqUrl: string, key: string) {
     return reqUrl + this._getAPIKeySuffix(reqUrl, key)
   }
 
@@ -538,7 +600,24 @@ class Kindred {
    * @param {object} timers; an object with <string, int> pairs
    * @returns {object} an object with <string, 0> pairs
    */
-  _disableCache(timers) {
+  _disableCache(timers: {
+    CHAMPION: number,
+    CHAMPION_MASTERY: number,
+    CURRENT_GAME: number,
+    FEATURED_GAMES: number,
+    GAME: number,
+    LEAGUE: number,
+    STATIC: number,
+    STATUS: number,
+    MATCH: number,
+    MATCHLIST: number,
+    RUNES_MASTERIES: number,
+    SPECTATOR: number,
+    STATS: number,
+    SUMMONER: number,
+    TOURNAMENT_STUB: number,
+    TOURNAMENT: number
+  }) {
     for (const key of Object.keys(timers))
       timers[key] = 0
 
@@ -550,7 +629,7 @@ class Kindred {
    * @param {object} options; object representing desired query arguments
    * @param {array} allowed; query parameters (usually in the form of a QUERY_PARAMS constant)
    */
-  _verifyOptions(options = {}, allowed) {
+  _verifyOptions(options: any = {}, allowed: Array<any>) {
     const keys = Object.keys(options)
 
     // No need to check if both are empty.
@@ -560,7 +639,7 @@ class Kindred {
     // Check each passed `key` against hard-coded query params.
     for (const key of keys)
       if (!allowed.includes(key))
-        throw new Error(chalk.red('Invalid query params! Valid: ' + allowed))
+        throw new Error(chalk.red('Invalid query params! Valid: ' + allowed.toString()))
   }
 
   /**
@@ -569,7 +648,7 @@ class Kindred {
    * @param {string} key; api key
    * @returns {string} api key suffix
    */
-  _getAPIKeySuffix(url, key) {
+  _getAPIKeySuffix(url: string, key?: string) {
     return (url.lastIndexOf('?') === -1
       ? '?'
       : '&'
@@ -582,7 +661,13 @@ class Kindred {
     staticReq = false,
     options = {},
     cacheParams = {}
-  }, cb) {
+  }: {
+    endUrl: string,
+    region?: string,
+    staticReq?: boolean,
+    options?: any,
+    cacheParams: any
+  }, cb: callback) {
     const tryRequest = (iterations) => {
       return new Promise((resolve, reject) => {
         const stringifiedOpts = this._stringifyOptions(options, endUrl)
@@ -598,7 +683,7 @@ class Kindred {
               console.log(`${chalk.green('CACHE HIT')} @ ${url}`)
             }
 
-            var json = JSON.parse(data)
+            var json = JSON.parse((data: any))
             if (cb) return cb(err, json)
             else return resolve(json)
           } else {
@@ -708,7 +793,15 @@ class Kindred {
     return tryRequest(this.numberOfRetriesBeforeBreak)
   }
 
-  _championMasteryRequest({ endUrl, region, options }, cb) {
+  _championMasteryRequest({
+    endUrl,
+    region,
+    options
+  }: {
+    endUrl: string,
+    region?: string,
+    options?: any
+  }, cb: callback) {
     return this._baseRequest({
       endUrl: `${SERVICES.CHAMPION_MASTERY}/v${VERSIONS.CHAMPION}/${endUrl}`, region, options,
       cacheParams: {
@@ -717,7 +810,15 @@ class Kindred {
     }, cb)
   }
 
-  _championRequest({ endUrl, region, options }, cb) {
+  _championRequest({
+    endUrl,
+    region,
+    options
+  }: {
+    endUrl: string,
+    region?: string,
+    options?: any
+  }, cb: callback) {
     return this._baseRequest({
       endUrl: `${SERVICES.CHAMPION}/v${VERSIONS.CHAMPION}/${endUrl}`,
       region, options,
@@ -727,7 +828,13 @@ class Kindred {
     }, cb)
   }
 
-  _spectatorRequest({ endUrl, region }, cb) {
+  _spectatorRequest({
+    endUrl,
+    region
+  }: {
+    endUrl: string,
+    region?: string
+  }, cb: callback) {
     return this._baseRequest({
       endUrl: `${SERVICES.SPECTATOR}/v${VERSIONS.SPECTATOR}/${endUrl}`,
       region,
@@ -737,7 +844,15 @@ class Kindred {
     }, cb)
   }
 
-  _staticRequest({ endUrl, region, options }, cb) {
+  _staticRequest({
+    endUrl,
+    region,
+    options
+  }: {
+    endUrl: string,
+    region?: string,
+    options?: any
+  }, cb: callback) {
     return this._baseRequest({
       endUrl: `${SERVICES.STATIC_DATA}/v${VERSIONS.STATIC_DATA}/${endUrl}`,
       staticReq: true,
@@ -749,7 +864,15 @@ class Kindred {
     }, cb)
   }
 
-  _statusRequest({ endUrl, region, options }, cb) {
+  _statusRequest({
+    endUrl,
+    region,
+    options
+  }: {
+    endUrl: string,
+    region?: string,
+    options?: any
+  }, cb: callback) {
     return this._baseRequest({
       endUrl: `${SERVICES.STATUS}/v${VERSIONS.STATUS}/${endUrl}`,
       region,
@@ -760,7 +883,13 @@ class Kindred {
     }, cb)
   }
 
-  _gameRequest({ endUrl, region }, cb) {
+  _gameRequest({
+    endUrl,
+    region
+  }: {
+    endUrl: string,
+    region?: string
+  }, cb: callback) {
     return this._baseRequest({
       endUrl: `v${VERSIONS.GAME}/game/${endUrl}`, region,
       cacheParams: {
@@ -769,7 +898,15 @@ class Kindred {
     }, cb)
   }
 
-  _leagueRequest({ endUrl, region, options }, cb) {
+  _leagueRequest({
+    endUrl,
+    region,
+    options
+  }: {
+    endUrl: string,
+    region?: string,
+    options?: any
+  }, cb: callback) {
     return this._baseRequest({
       endUrl: `${SERVICES.LEAGUE}/v${VERSIONS.LEAGUE}/${endUrl}`, region, options,
       cacheParams: {
@@ -778,14 +915,32 @@ class Kindred {
     }, cb)
   }
 
-  _matchRequest({ endUrl, region, options, cacheParams = { ttl: this.CACHE_TIMERS.MATCH } }, cb) {
+  _matchRequest({
+    endUrl,
+    region,
+    options,
+    cacheParams = { ttl: this.CACHE_TIMERS.MATCH }
+  }: {
+    endUrl: string,
+    region?: string,
+    options?: any,
+    cacheParams?: { ttl: number }
+  }, cb: callback) {
     return this._baseRequest({
       endUrl: `${SERVICES.MATCH}/v${VERSIONS.MATCH}/${endUrl}`, region, options,
       cacheParams
     }, cb)
   }
 
-  _matchlistRequest({ endUrl, region, options }, cb) {
+  _matchlistRequest({
+    endUrl,
+    region,
+    options
+  }: {
+    endUrl: string,
+    region?: string,
+    options?: any
+  }, cb: callback) {
     return this._matchRequest({
       endUrl: `matchlists/${endUrl}`, region, options,
       cacheParams: {
@@ -794,7 +949,13 @@ class Kindred {
     }, cb)
   }
 
-  _runesMasteriesRequest({ endUrl, region }, cb) {
+  _runesMasteriesRequest({
+    endUrl,
+    region
+  }: {
+    endUrl: string,
+    region?: string
+  }, cb: callback) {
     return this._baseRequest({
       endUrl: `${SERVICES.RUNES_MASTERIES}/v${VERSIONS.RUNES_MASTERIES}/${endUrl}`, region,
       cacheParams: {
@@ -803,7 +964,15 @@ class Kindred {
     }, cb)
   }
 
-  _statsRequest({ endUrl, region, options }, cb) {
+  _statsRequest({
+    endUrl,
+    region,
+    options
+  }: {
+    endUrl: string,
+    region?: string,
+    options?: any
+  }, cb: callback) {
     return this._baseRequest({
       endUrl: `v${VERSIONS.STATS}/stats/by-summoner/${endUrl}`, region, options,
       cacheParams: {
@@ -812,7 +981,13 @@ class Kindred {
     }, cb)
   }
 
-  _summonerRequest({ endUrl, region }, cb) {
+  _summonerRequest({
+    endUrl,
+    region
+  }: {
+    endUrl: string,
+    region?: string
+  }, cb: callback) {
     return this._baseRequest({
       endUrl: `${SERVICES.SUMMONER}/v${VERSIONS.SUMMONER}/summoners/${endUrl}`, region,
       cacheParams: {
@@ -821,16 +996,16 @@ class Kindred {
     }, cb)
   }
 
-  _logError(message, expected) {
+  _logError(message: string, expected: string) {
     throw new Error(
       chalk.bold.yellow(message) + ' ' + chalk.red('request') + ' ' + chalk.bold.red('FAILED') + chalk.red(`; ${expected}`)
     )
   }
 
-  setRegion(region) {
-    this.defaultRegion = checkValidRegion(region) ? region : undefined
+  setRegion(region: string) {
+    this.defaultRegion = checkValidRegion(region) ? region : ''
 
-    if (!this.defaultRegion)
+    if (this.defaultRegion.length === 0)
       throw new Error(
         `${chalk.red(`setRegion() by Kindred failed: ${chalk.yellow(region)} is an invalid region.`)}\n`
         + `${(chalk.red(`Try importing ${chalk.yellow('require(\'kindred-api\').REGIONS')} and using one of those values instead.`))}`
@@ -838,7 +1013,7 @@ class Kindred {
   }
 
   /* CHAMPION-V3 */
-  getChamps({ region, options } = {}, cb) {
+  getChamps({ region, options }: { region?: string, options?: any } = {}, cb: callback) {
     this._verifyOptions(options, QUERY_PARAMS.CHAMPION.LIST)
 
     if (isFunction(arguments[0])) {
@@ -854,10 +1029,20 @@ class Kindred {
   getChamp({
     region,
     id, championId
-  } = {}, cb) {
+  }: {
+    region?: string,
+    id?: number, championId?: number
+  } = {}, cb: callback) {
+    let endUrl = ''
     if (Number.isInteger(id) || Number.isInteger(championId)) {
+      if (id) {
+        endUrl = id.toString()
+      }
+      if (championId) {
+        endUrl = championId.toString()
+      }
       return this._championRequest({
-        endUrl: `champions/${id || championId}`,
+        endUrl: `champions/${endUrl}`,
         region
       }, cb)
     } else {
@@ -872,8 +1057,11 @@ class Kindred {
   getChampMastery({
     region,
     playerId, championId
-  } = {}, cb) {
-    if (Number.isInteger(playerId) && Number.isInteger(championId)) {
+  }: {
+    region?: string,
+    playerId?: number, championId?: number
+  } = {}, cb: callback) {
+    if (playerId && championId && Number.isInteger(playerId) && Number.isInteger(championId)) {
       return this._championMasteryRequest({
         endUrl: `champion-masteries/by-summoner/${playerId}/by-champion/${championId}`, region
       }, cb)
@@ -890,29 +1078,55 @@ class Kindred {
     accountId, accId,
     id, summonerId, playerId,
     name
-  } = {}, cb) {
+  }: {
+    region?: string,
+    accountId?: number, accId?: number,
+    id?: number, summonerId?: number, playerId?: number,
+    name?: string
+  } = {}, cb: callback) {
+    let endUrl = ''
     if (Number.isInteger(accountId || accId)) {
+      let tempNum: number
+      if (accountId) {
+        tempNum = accountId
+      }
+      if (accId) {
+        tempNum = accId
+      }
       return new Promise((resolve, reject) => {
-        return this.getSummoner({ accId: accountId || accId, region }, (err, data) => {
+        return this.getSummoner({ accId: tempNum, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._championMasteryRequest({
-            endUrl: `champion-masteries/by-summoner/${data.id}`,
-            region
-          }, cb))
+          if (data && data.id) {
+            return resolve(this._championMasteryRequest({
+              endUrl: `champion-masteries/by-summoner/${data.id}`,
+              region
+            }, cb))
+          }
         })
       })
     } else if (Number.isInteger(id || summonerId || playerId)) {
+      if (id) {
+        endUrl = id.toString()
+      }
+      if (summonerId) {
+        endUrl = summonerId.toString()
+      }
+      if (playerId) {
+        endUrl = playerId.toString()
+      }
       return this._championMasteryRequest({
-        endUrl: `champion-masteries/by-summoner/${id || summonerId || playerId}`, region
+        endUrl: `champion-masteries/by-summoner/${endUrl}`, region
       }, cb)
     } else if (typeof name === 'string') {
       return new Promise((resolve, reject) => {
         return this.getSummoner({ name, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._championMasteryRequest({
-            endUrl: `champion-masteries/by-summoner/${data.id}`,
-            region
-          }, cb))
+          if (data && data.id) {
+            return resolve(this._championMasteryRequest({
+              endUrl: `champion-masteries/by-summoner/${data.id}`,
+              region
+            }, cb))
+          }
         })
       })
     } else {
@@ -928,29 +1142,55 @@ class Kindred {
     accountId, accId,
     id, summonerId, playerId,
     name
-  } = {}, cb) {
+  }: {
+    region?: string,
+    accountId?: number, accId?: number,
+    id?: number, summonerId?: number, playerId?: number,
+    name?: string
+  } = {}, cb: callback) {
+    let endUrl = ''
     if (Number.isInteger(accountId || accId)) {
+      let tempNum: number
+      if (accountId) {
+        tempNum = accountId
+      }
+      if (accId) {
+        tempNum = accId
+      }
       return new Promise((resolve, reject) => {
-        return this.getSummoner({ accId: accountId || accId, region }, (err, data) => {
+        return this.getSummoner({ accId: tempNum, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._championMasteryRequest({
-            endUrl: `scores/by-summoner/${data.id}`,
-            region
-          }, cb))
+          if (data && data.id) {
+            return resolve(this._championMasteryRequest({
+              endUrl: `scores/by-summoner/${data.id}`,
+              region
+            }, cb))
+          }
         })
       })
     } else if (Number.isInteger(id || summonerId || playerId)) {
+      if (id) {
+        endUrl = id.toString()
+      }
+      if (summonerId) {
+        endUrl =summonerId.toString()
+      }
+      if (playerId) {
+        endUrl = playerId.toString()
+      }
       return this._championMasteryRequest({
-        endUrl: `scores/by-summoner/${id || summonerId || playerId}`, region
+        endUrl: `scores/by-summoner/${endUrl}`, region
       }, cb)
     } else if (typeof name === 'string') {
       return new Promise((resolve, reject) => {
         return this.getSummoner({ name, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._championMasteryRequest({
-            endUrl: `scores/by-summoner/${data.id}`,
-            region
-          }, cb))
+          if (data && data.id) {
+            return resolve(this._championMasteryRequest({
+              endUrl: `scores/by-summoner/${data.id}`,
+              region
+            }, cb))
+          }
         })
       })
     } else {
@@ -967,30 +1207,49 @@ class Kindred {
     accountId, accId,
     id, summonerId, playerId,
     name
-  } = {}, cb) {
+  }: {
+    region?: string,
+    accountId?: number, accId?: number,
+    id?: number, summonerId?: number, playerId?: number,
+    name?: string
+  } = {}, cb: callback) {
+    let endUrl = ''
     if (Number.isInteger(accountId || accId)) {
       return new Promise((resolve, reject) => {
         return this.getSummoner({ accId: accountId || accId, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._spectatorRequest({
-            endUrl: `active-games/by-summoner/${data.id}`,
-            region
-          }, cb))
+          if (data && data.id) {
+            return resolve(this._spectatorRequest({
+              endUrl: `active-games/by-summoner/${data.id}`,
+              region
+            }, cb))
+          }
         })
       })
     } else if (Number.isInteger(id || summonerId || playerId)) {
+      if (id) {
+        endUrl = id.toString()
+      }
+      if (summonerId) {
+        endUrl = summonerId.toString()
+      }
+      if (playerId) {
+        endUrl = playerId.toString()
+      }
       return this._spectatorRequest({
-        endUrl: `active-games/by-summoner/${id || summonerId || playerId}`,
+        endUrl: `active-games/by-summoner/${endUrl}`,
         region
       }, cb)
     } else if (typeof name === 'string') {
       return new Promise((resolve, reject) => {
         return this.getSummoner({ name, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._spectatorRequest({
-            endUrl: `active-games/by-summoner/${data.id}`,
-            region
-          }, cb))
+          if (data && data.id) {
+            return resolve(this._spectatorRequest({
+              endUrl: `active-games/by-summoner/${data.id}`,
+              region
+            }, cb))
+          }
         })
       })
     } else {
@@ -1001,7 +1260,7 @@ class Kindred {
     }
   }
 
-  getFeaturedGames({ region } = {}, cb) {
+  getFeaturedGames({ region }: { region?: string } = {}, cb: callback) {
     if (isFunction(arguments[0])) {
       cb = arguments[0]
       arguments[0] = undefined
@@ -1019,28 +1278,47 @@ class Kindred {
     accountId, accId,
     id, summonerId, playerId,
     name
-  } = {}, cb) {
+  }: {
+    region?: string,
+    accountId?: number, accId?: number,
+    id?: number, summonerId?: number, playerId?: number,
+    name?: string
+  } = {}, cb: callback) {
+    let endUrl = ''
     if (Number.isInteger(accountId || accId)) {
       return new Promise((resolve, reject) => {
         return this.getSummoner({ accId: accountId || accId, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._gameRequest({
-            endUrl: `by-summoner/${data.id}/recent`, region
-          }, cb))
+          if (data && data.id) {
+            return resolve(this._gameRequest({
+              endUrl: `by-summoner/${data.id}/recent`, region
+            }, cb))
+          }
         })
       })
     } else if (Number.isInteger(id || summonerId || playerId)) {
+      if (id) {
+        endUrl = id.toString()
+      }
+      if (summonerId) {
+        endUrl = summonerId.toString()
+      }
+      if (playerId) {
+        endUrl = playerId.toString()
+      }
       return this._gameRequest({
-        endUrl: `by-summoner/${id || summonerId || playerId}/recent`,
+        endUrl: `by-summoner/${endUrl}/recent`,
         region
       }, cb)
     } else if (typeof name === 'string') {
       return new Promise((resolve, reject) => {
         return this.getSummoner({ name, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._gameRequest({
-            endUrl: `by-summoner/${data.id}/recent`, region
-          }, cb))
+          if (data && data.id) {
+            return resolve(this._gameRequest({
+              endUrl: `by-summoner/${data.id}/recent`, region
+            }, cb))
+          }
         })
       })
     } else {
@@ -1057,30 +1335,56 @@ class Kindred {
     accountId, accId,
     id, summonerId, playerId,
     name
-  } = {}, cb) {
+  }: {
+    region?: string,
+    accountId?: number, accId?: number,
+    id?: number, summonerId?: number, playerId?: number,
+    name?: string
+  } = {}, cb: callback) {
+    let endUrl = ''
     if (Number.isInteger(accountId || accId)) {
+      let tempNum: number
+      if (accountId) {
+        tempNum = accountId
+      }
+      if (accId) {
+        tempNum = accId
+      }
       return new Promise((resolve, reject) => {
-        return this.getSummoner({ accId: accountId || accId, region }, (err, data) => {
+        return this.getSummoner({ accId: tempNum, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._leagueRequest({
-            endUrl: `leagues/by-summoner/${data.id}`,
-            region
-          }, cb))
+          if (data && data.id) {
+            return resolve(this._leagueRequest({
+              endUrl: `leagues/by-summoner/${data.id}`,
+              region
+            }, cb))
+          }
         })
       })
     } else if (Number.isInteger(id || summonerId || playerId)) {
+      if (id) {
+        endUrl = id.toString()
+      }
+      if (summonerId) {
+        endUrl = summonerId.toString()
+      }
+      if (playerId) {
+        endUrl = playerId.toString()
+      }
       return this._leagueRequest({
-        endUrl: `leagues/by-summoner/${id || summonerId || playerId}`,
+        endUrl: `leagues/by-summoner/${endUrl}`,
         region
       }, cb)
     } else if (typeof name === 'string') {
       return new Promise((resolve, reject) => {
         return this.getSummoner({ name, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._leagueRequest({
-            endUrl: `leagues/by-summoner/${data.id}`,
-            region
-          }, cb))
+          if (data && data.id) {
+            return resolve(this._leagueRequest({
+              endUrl: `leagues/by-summoner/${data.id}`,
+              region
+            }, cb))
+          }
         })
       })
     } else {
@@ -1096,30 +1400,56 @@ class Kindred {
     accountId, accId,
     id, summonerId, playerId,
     name
-  } = {}, cb) {
+  }: {
+    region?: string,
+    accountId?: number, accId?: number,
+    id?: number, summonerId?: number, playerId?: number,
+    name?: string
+  } = {}, cb: callback) {
+    let endUrl = ''
     if (Number.isInteger(accountId || accId)) {
+      let tempNum: number
+      if (accountId) {
+        tempNum = accountId
+      }
+      if (accId) {
+        tempNum = accId
+      }
       return new Promise((resolve, reject) => {
-        return this.getSummoner({ accId: accountId || accId, region }, (err, data) => {
+        return this.getSummoner({ accId: tempNum, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._leagueRequest({
-            endUrl: `positions/by-summoner/${data.id}`,
-            region
-          }, cb))
+          if (data && data.id) {
+            return resolve(this._leagueRequest({
+              endUrl: `positions/by-summoner/${data.id}`,
+              region
+            }, cb))
+          }
         })
       })
     } else if (Number.isInteger(id || summonerId || playerId)) {
+      if (id) {
+        endUrl = id.toString()
+      }
+      if (summonerId) {
+        endUrl = summonerId.toString()
+      }
+      if (playerId) {
+        endUrl = playerId.toString()
+      }
       return this._leagueRequest({
-        endUrl: `positions/by-summoner/${id || summonerId || playerId}`,
+        endUrl: `positions/by-summoner/${endUrl}`,
         region
       }, cb)
     } else if (typeof name === 'string') {
       return new Promise((resolve, reject) => {
         return this.getSummoner({ name, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._leagueRequest({
-            endUrl: `positions/by-summoner/${data.id}`,
-            region
-          }, cb))
+          if (data && data.id) {
+            return resolve(this._leagueRequest({
+              endUrl: `positions/by-summoner/${data.id}`,
+              region
+            }, cb))
+          }
         })
       })
     } else {
@@ -1133,7 +1463,10 @@ class Kindred {
   getChallengers({
     region,
     queue = 'RANKED_SOLO_5x5'
-  } = {}, cb) {
+  }: {
+    region?: any,
+    queue?: string
+  } = {}, cb: callback) {
     cb = isFunction(arguments[0]) ? arguments[0] : arguments[1]
 
     if (typeof queue === 'string') {
@@ -1151,7 +1484,10 @@ class Kindred {
   getMasters({
     region,
     queue = 'RANKED_SOLO_5x5'
-  } = {}, cb) {
+  }: {
+    region?: any,
+    queue?: string
+  } = {}, cb: callback) {
     cb = isFunction(arguments[0]) ? arguments[0] : arguments[1]
 
     if (typeof queue === 'string') {
@@ -1167,7 +1503,7 @@ class Kindred {
   }
 
   /* STATIC-DATA-V3 */
-  getChampionList({ region, options } = {}, cb) {
+  getChampionList({ region, options }: { region?: string, options?: any } = {}, cb: callback) {
     this._verifyOptions(options, QUERY_PARAMS.STATIC.CHAMPION.LIST)
 
     if (isFunction(arguments[0])) {
@@ -1182,11 +1518,21 @@ class Kindred {
     region,
     id, championId,
     options
-  } = {}, cb) {
+  }: {
+    region?: string,
+    id?: number, championId?: number,
+    options?: any
+  } = {}, cb: callback) {
     this._verifyOptions(options, QUERY_PARAMS.STATIC.CHAMPION.ONE)
-
+    let endUrl = ''
     if (Number.isInteger(id || championId)) {
-      return this._staticRequest({ endUrl: `champions/${id || championId}`, region, options }, cb)
+      if (id) {
+        endUrl = id.toString()
+      }
+      if (championId) {
+        endUrl = championId.toString()
+      }
+      return this._staticRequest({ endUrl: `champions/${endUrl}`, region, options }, cb)
     } else {
       return this._logError(
         this.getChampion.name,
@@ -1195,7 +1541,7 @@ class Kindred {
     }
   }
 
-  getItems({ region, options } = {}, cb) {
+  getItems({ region, options }: { region?: string, options?: any } = {}, cb: callback) {
     this._verifyOptions(options, QUERY_PARAMS.STATIC.ITEM.LIST)
 
     if (isFunction(arguments[0])) {
@@ -1210,11 +1556,21 @@ class Kindred {
     region,
     id, itemId,
     options
-  } = {}, cb) {
+  }: {
+    region?: string,
+    id?: number, itemId?: number,
+    options?: any
+  } = {}, cb: callback) {
     this._verifyOptions(options, QUERY_PARAMS.STATIC.ITEM.ONE)
-
+    let endUrl = ''
     if (Number.isInteger(id || itemId)) {
-      return this._staticRequest({ endUrl: `items/${id || itemId}`, region, options }, cb)
+      if (id) {
+        endUrl = id.toString()
+      }
+      if (itemId) {
+        endUrl = itemId.toString()
+      }
+      return this._staticRequest({ endUrl: `items/${endUrl}`, region, options }, cb)
     } else {
       return this._logError(
         this.getItem.name,
@@ -1223,7 +1579,7 @@ class Kindred {
     }
   }
 
-  getLanguageStrings({ region, options } = {}, cb) {
+  getLanguageStrings({ region, options }: { region?: string, options?: any } = {}, cb: callback) {
     this._verifyOptions(options, QUERY_PARAMS.STATIC.LANGUAGE_STRING.LIST)
 
     if (isFunction(arguments[0])) {
@@ -1234,7 +1590,7 @@ class Kindred {
     return this._staticRequest({ endUrl: 'language-strings', region, options }, cb)
   }
 
-  getLanguages({ region } = {}, cb) {
+  getLanguages({ region }: { region?: string } = {}, cb: callback) {
     if (isFunction(arguments[0])) {
       cb = arguments[0]
       arguments[0] = undefined
@@ -1243,7 +1599,7 @@ class Kindred {
     return this._staticRequest({ endUrl: 'languages', region }, cb)
   }
 
-  getMapData({ region, options } = {}, cb) {
+  getMapData({ region, options }: { region?: string, options?: any } = {}, cb: callback) {
     this._verifyOptions(options, QUERY_PARAMS.STATIC.MAP.LIST)
 
     if (isFunction(arguments[0])) {
@@ -1254,7 +1610,7 @@ class Kindred {
     return this._staticRequest({ endUrl: 'maps', region, options }, cb)
   }
 
-  getMasteryList({ region, options } = {}, cb) {
+  getMasteryList({ region, options }: { region?: string, options?: any } = {}, cb: callback) {
     this._verifyOptions(options, QUERY_PARAMS.STATIC.MASTERY.LIST)
 
     if (isFunction(arguments[0])) {
@@ -1269,12 +1625,22 @@ class Kindred {
     region,
     id, masteryId,
     options
-  } = {}, cb) {
+  }: {
+    region?: string,
+    id?: number, masteryId?: number,
+    options?: any
+  } = {}, cb: callback) {
     this._verifyOptions(options, QUERY_PARAMS.STATIC.MASTERY.ONE)
-
+    let endUrl = ''
     if (Number.isInteger(id || masteryId)) {
+      if (id) {
+        endUrl = id.toString()
+      }
+      if (masteryId) {
+        endUrl = masteryId.toString()
+      }
       return this._staticRequest({
-        endUrl: `masteries/${id || masteryId}`,
+        endUrl: `masteries/${endUrl}`,
         region, options
       }, cb)
     } else {
@@ -1285,7 +1651,7 @@ class Kindred {
     }
   }
 
-  getProfileIcons({ region, options } = {}, cb) {
+  getProfileIcons({ region, options }: { region?: string, options?: any } = {}, cb: callback) {
     this._verifyOptions(options, QUERY_PARAMS.STATIC.PROFILE_ICON.LIST)
 
     if (isFunction(arguments[0])) {
@@ -1296,7 +1662,7 @@ class Kindred {
     return this._staticRequest({ endUrl: 'profile-icons', region, options }, cb)
   }
 
-  getRealmData({ region } = {}, cb) {
+  getRealmData({ region }: { region?: string } = {}, cb: callback) {
     if (isFunction(arguments[0])) {
       cb = arguments[0]
       arguments[0] = undefined
@@ -1305,7 +1671,7 @@ class Kindred {
     return this._staticRequest({ endUrl: 'realms', region }, cb)
   }
 
-  getRuneList({ region, options } = {}, cb) {
+  getRuneList({ region, options }: { region?: string, options?: any } = {}, cb: callback) {
     this._verifyOptions(options, QUERY_PARAMS.STATIC.RUNE.LIST)
 
     if (isFunction(arguments[0])) {
@@ -1320,11 +1686,21 @@ class Kindred {
     region,
     id, runeId,
     options
-  } = {}, cb) {
+  }: {
+    region?: string,
+    id?: number, runeId?: number,
+    options?: any
+  } = {}, cb: callback) {
     this._verifyOptions(options, QUERY_PARAMS.STATIC.RUNE.ONE)
-
+    let endUrl = ''
     if (Number.isInteger(id || runeId)) {
-      return this._staticRequest({ endUrl: `runes/${id || runeId}`, region, options }, cb)
+      if (id) {
+        endUrl = id.toString()
+      }
+      if (runeId) {
+        endUrl = runeId.toString()
+      }
+      return this._staticRequest({ endUrl: `runes/${endUrl}`, region, options }, cb)
     } else {
       return this._logError(
         this.getRune.name,
@@ -1333,7 +1709,7 @@ class Kindred {
     }
   }
 
-  getSummonerSpells({ region, options } = {}, cb) {
+  getSummonerSpells({ region, options }: { region?: string, options?: any } = {}, cb: callback) {
     this._verifyOptions(options, QUERY_PARAMS.STATIC.SUMMONER_SPELL.LIST)
 
     if (isFunction(arguments[0])) {
@@ -1348,12 +1724,25 @@ class Kindred {
     region,
     id, spellId, summonerSpellId,
     options
-  } = {}, cb) {
+  }: {
+    region?: string,
+    id?: number, spellId?: number, summonerSpellId?: number,
+    options?: any,
+  } = {}, cb: callback) {
     this._verifyOptions(options, QUERY_PARAMS.STATIC.SUMMONER_SPELL.ONE)
-
+    let endUrl = ''
     if (Number.isInteger(id || spellId || summonerSpellId)) {
+      if (id) {
+        endUrl = id.toString()
+      }
+      if (spellId) {
+        endUrl = spellId.toString()
+      }
+      if (summonerSpellId) {
+        endUrl = summonerSpellId.toString()
+      }
       return this._staticRequest({
-        endUrl: `summoner-spells/${id || spellId || summonerSpellId}`,
+        endUrl: `summoner-spells/${endUrl}`,
         region, options
       }, cb)
     } else {
@@ -1364,7 +1753,7 @@ class Kindred {
     }
   }
 
-  getVersionData({ region, options } = {}, cb) {
+  getVersionData({ region, options }: { region?: string, options?: any } = {}, cb: callback) {
     if (isFunction(arguments[0])) {
       cb = arguments[0]
       arguments[0] = undefined
@@ -1374,17 +1763,18 @@ class Kindred {
   }
 
   /* STATUS-V3 */
-  getShardStatus({ region } = {}, cb) {
+  getShardStatus({ region }: { region?: string } = {}, cb: callback) {
     if (isFunction(arguments[0])) {
       cb = arguments[0]
       arguments[0] = undefined
     }
 
-    if (typeof region === 'string' && !checkValidRegion(region))
+    if (typeof region === 'string' && !checkValidRegion(region)) {
       return this._logError(
         this.getShardStatus.name,
         'invalid region!'
       )
+    }
 
     return this._statusRequest({ endUrl: 'shard-data', region }, cb)
   }
@@ -1393,9 +1783,19 @@ class Kindred {
   getMatch({
     region,
     id, matchId
-  } = {}, cb) {
+  }: {
+    region?: string,
+    id?: number, matchId?: number
+  } = {}, cb: callback) {
+    let endUrl = ''
     if (Number.isInteger(id || matchId)) {
-      return this._matchRequest({ endUrl: `matches/${id || matchId}`, region }, cb)
+      if (id) {
+        endUrl = id.toString()
+      }
+      if (matchId) {
+        endUrl = matchId.toString()
+      }
+      return this._matchRequest({ endUrl: `matches/${endUrl}`, region }, cb)
     } else {
       return this._logError(
         this.getMatch.name,
@@ -1410,32 +1810,48 @@ class Kindred {
     id, summonerId, playerId,
     name,
     options
-  } = {}, cb) {
+  }: {
+    region?: string,
+    accountId?: number, accId?: number,
+    id?: number, summonerId?: number, playerId?: number,
+    name?: string,
+    options?: any,
+  } = {}, cb: callback) {
     this._verifyOptions(options, QUERY_PARAMS.MATCHLIST.GET)
-
+    let endUrl = ''
     if (Number.isInteger(accountId || accId)) {
+      if (accountId) {
+        endUrl = accountId.toString()
+      }
+      if (accId) {
+        endUrl = accId.toString()
+      }
       return this._matchlistRequest({
-        endUrl: `by-account/${accountId || accId}`,
+        endUrl: `by-account/${endUrl}`,
         region, options
       }, cb)
     } else if (Number.isInteger(id || summonerId || playerId)) {
       return new Promise((resolve, reject) => {
         return this.getSummoner({ id, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._matchlistRequest({
-            endUrl: `by-account/${data.accountId}`,
-            region, options
-          }, cb))
+          if (data && data.accountId) {
+            return resolve(this._matchlistRequest({
+              endUrl: `by-account/${data.accountId}`,
+              region, options
+            }, cb))
+          }
         })
       })
     } else if (typeof name === 'string') {
       return new Promise((resolve, reject) => {
         return this.getSummoner({ name, region }, (err, data) => {
           if (err) { cb ? cb(err) : reject(err); return }
-          return resolve(this._matchlistRequest({
-            endUrl: `by-account/${data.accountId}`,
-            region, options
-          }, cb))
+          if (data && data.accountId) {
+            return resolve(this._matchlistRequest({
+              endUrl: `by-account/${data.accountId}`,
+              region, options
+            }, cb))
+          }
         })
       })
     } else {
@@ -1452,10 +1868,10 @@ class Kindred {
     id, summonerId, playerId,
     name
   }: {
-    region?: ?string,
-    accountId?: ?number, accId?: ?number,
-    id?: ?number, summonerId?: ?number, playerId?: ?number,
-    name?: ?string,
+    region?: string,
+    accountId?: number, accId?: number,
+    id?: number, summonerId?: number, playerId?: number,
+    name?: string,
   } = {}, cb: callback) {
     let endUrl = ''
     if (Number.isInteger(accountId || accId)) {
@@ -1466,7 +1882,7 @@ class Kindred {
         endUrl = accId.toString()
       }
       return this._matchlistRequest({
-        endUrl: `by-account/${accountId || accId}/recent`,
+        endUrl: `by-account/${endUrl}/recent`,
         region
       }, cb)
     } else if (Number.isInteger(id || summonerId || playerId)) {
@@ -1505,8 +1921,8 @@ class Kindred {
     region,
     id, matchId
   }: {
-    region?: ?string,
-    id?: ?number, matchId?: ?number
+    region?: string,
+    id?: number, matchId?: number
   } = {}, cb: callback) {
     let endUrl = ''
     if (Number.isInteger(id || matchId)) {
@@ -1535,10 +1951,10 @@ class Kindred {
     id, summonerId, playerId,
     name
   }: {
-    region?: ?string,
-    accountId?: ?number, accId?: ?number,
-    id?: ?number, summonerId?: ?number, playerId?: ?number,
-    name?: ?string,
+    region?: string,
+    accountId?: number, accId?: number,
+    id?: number, summonerId?: number, playerId?: number,
+    name?: string,
   } = {}, cb: callback) {
     let endUrl = ''
     if (Number.isInteger(accountId || accId)) {
@@ -1594,10 +2010,10 @@ class Kindred {
     id, summonerId, playerId,
     name
   }: {
-    region?: ?string,
-    id?: ?number, summonerId?: ?number, playerId?: ?number,
-    accountId?: ?number, accId?: ?number,
-    name?: ?string,
+    region?: string,
+    id?: number, summonerId?: number, playerId?: number,
+    accountId?: number, accId?: number,
+    name?: string,
   } = {}, cb: callback) {
     let endUrl = ''
     if (Number.isInteger(accountId || accId)) {
@@ -1654,10 +2070,10 @@ class Kindred {
     name,
     options
   }: {
-    region?: ?string,
-    accountId?: ?number, accId?: ?number,
-    id?: ?number, summonerId?: ?number, playerId?: ?number,
-    name?: ?string,
+    region?: string,
+    accountId?: number, accId?: number,
+    id?: number, summonerId?: number, playerId?: number,
+    name?: string,
     options?: any,
   } = {}, cb: callback) {
     this._verifyOptions(options, QUERY_PARAMS.STATS.RANKED)
@@ -1675,7 +2091,7 @@ class Kindred {
         })
       })
     } else if (Number.isInteger(id || summonerId || playerId)) {
-      let endUrl = '';
+      let endUrl = ''
       if (id) {
         endUrl = id.toString()
       }
@@ -1716,10 +2132,10 @@ class Kindred {
     name,
     options
   }: {
-    region?: ?string,
-    accountId?: ?number, accId?: ?number,
-    id?: ?number, summonerId?: ?number, playerId?: ?number,
-    name?: ?string,
+    region?: string,
+    accountId: number, accId?: number,
+    id?: number, summonerId?: number, playerId?: number,
+    name?: string,
     options?: any,
   } = {}, cb: callback) {
     this._verifyOptions(options, QUERY_PARAMS.STATS.SUMMARY)
@@ -1777,10 +2193,10 @@ class Kindred {
     accountId, accId,
     name
   }: {
-    region?: ?string,
-    id?: ?number, summonerId?: ?number, playerId?: ?number,
-    accountId?: ?number, accId?: ?number,
-    name?: ?string
+    region?: string,
+    id?: number, summonerId?: number, playerId?: number,
+    accountId?: number, accId?: number,
+    name?: string
   } = {}, cb: callback) {
     let endUrl = ''
     if (Number.isInteger(id || summonerId || playerId)) {
@@ -1804,17 +2220,15 @@ class Kindred {
       }, cb)
     } else if (Number.isInteger(accountId || accId)) {
       if (accountId) {
-        return this._summonerRequest({
-          endUrl: `by-account/${accountId || accId}`,
-          region
-        }, cb)
+        endUrl = accountId.toString()
       }
       if (accId) {
-        return this._summonerRequest({
-          endUrl: `by-account/${accId}`,
-          region
-        }, cb)
+        endUrl = accId.toString()
       }
+      return this._summonerRequest({
+        endUrl: `by-account/${endUrl}`,
+        region
+      }, cb)
     } else {
       return this._logError(
         this.getSummoner.name,
@@ -2440,7 +2854,7 @@ function print(err: string, data: Object) {
   else console.log(data)
 }
 
-type callback = (string, ?Object) => void
+type callback = (?string, ?Object) => void
 const undefined_ = (undefined: any)
 
 export default {

@@ -7,7 +7,7 @@
   "scripts": {
     "go": "yarn lint && yarn build && yarn minify && babel test.js -o test-compiled.js && node test-compiled.js",
     "prepare": "yarn build && yarn minify",
-    "test": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha \"test/**/*.js\"",
+    "test": "cd src && flow --show-all-errors && cd - && ./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha \"test/**/*.js\"",
     "lint": "node make eslint",
     "build": "node make build",
     "watch": "node make watch",
@@ -43,6 +43,7 @@
     "eslint": "^3.13.0",
     "eslint-plugin-flowtype": "^2.34.1",
     "flow": "^0.2.3",
+    "flow-bin": "^0.49.1",
     "mkdirp": "^0.5.1",
     "mocha": "^3.2.0",
     "rollup": "^0.41.1",
