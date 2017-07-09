@@ -479,10 +479,10 @@ class Kindred {
   /**
    * Checks if client can make a request in a certain region.
    * Checks if client should use spread limiter or not as well.
-   * @param {string} region; some region string
+   * @param {string} region some region string
    * @returns {boolean} true if client can make a request
    */
-  canMakeRequest(region: string) {
+  canMakeRequest(region: string): boolean {
     const spread = this.spread
       ? this.limits[region][2].requestAvailable()
       : true
@@ -496,13 +496,13 @@ class Kindred {
 
   /**
    * Sanitizes summoner name.
-   * @param {string} name; summoner name
+   * @param {string} name summoner name
    * @returns {string} sanitized name
    */
-  _sanitizeName(name: string) {
+  _sanitizeName(name: string): string | void {
     if (this._validName(name)) {
       return name.replace(/\s/g, '').toLowerCase()
-    } else {1
+    } else {
       this._logError(
         this._validName.name,
         `Name ${chalk.yellow(name)} is not valid. Request failed.`
@@ -512,28 +512,29 @@ class Kindred {
 
   /**
    * Checks if summoner name is valid using Riot League of Legends regex rule.
-   * @param {string} name; summoner name
+   * @param {string} name summoner name
    * @returns {boolean} true if both rules are adhered
    */
-  _validName(name: string) {
+  _validName(name: string): boolean {
     return re.test(name) && name.length <= 16
   }
 
   /**
    * Caches data.
-   * @param {string} key; cache key
-   * @param {int} ttl; some integer
-   * @param {object} body; some object of data
+   * @param {string} key cache key
+   * @param {int} ttl some integer
+   * @param {object} body some object of data
    */
-  _cacheData(key: string, ttl: number, body: any) {
-    if (validTTL(ttl))
+  _cacheData(key: string, ttl: number, body: any): void {
+    if (validTTL(ttl)) {
       this.cache.set({ key, ttl }, body)
+    }
   }
 
   /**
    * Creates a request url.
-   * @param {string} query; the string after the url origin
-   * @param {string} region; region string
+   * @param {string} query the string after the url origin
+   * @param {string} region region string
    * @returns {string} a request url
    */
   _makeUrl(query: string, region: string) {
@@ -554,15 +555,16 @@ class Kindred {
 
   /**
    * Stringifies a query arguments object.
-   * @param {object} options; object representing desired query arguments
-   * @param {string} endUrl; the string after the url origin
+   * @param {object} options object representing desired query arguments
+   * @param {string} endUrl the string after the url origin
    * @returns {string} options stringified (form depends on endpoint version for now)
    */
-  _stringifyOptions(options: any, endUrl: string) {
+  _stringifyOptions(options: any, endUrl: string): string {
     let stringifiedOpts = ''
 
     // Returns stringified opts with appended key-value pair.
-    const appendKey = (str, key, el) => str + (str ? '&' : '') + `${key}=${el}`
+    const appendKey = (str: string, key: string, value: string): string =>
+      str + (str ? '&' : '') + `${key}=${value}`
 
     // TODO: Remove this when Riot has deprecated the endpoints.
     if (endUrl.lastIndexOf('v3') === -1) {
@@ -573,8 +575,8 @@ class Kindred {
     } else {
       for (const key of Object.keys(options)) {
         if (Array.isArray(options[key])) {
-          for (const el of options[key]) {
-            stringifiedOpts = appendKey(stringifiedOpts, key, el)
+          for (const value of options[key]) {
+            stringifiedOpts = appendKey(stringifiedOpts, key, value)
           }
         } else {
           stringifiedOpts = appendKey(stringifiedOpts, key, options[key])
@@ -587,17 +589,17 @@ class Kindred {
 
   /**
    * Concatenates request url with key.
-   * @param {string} reqUrl; the full request url
-   * @param {string} key; an API key
+   * @param {string} reqUrl the full request url
+   * @param {string} key an API key
    * @returns {string} the full url used to make requests
    */
-  _constructFullUrl(reqUrl: string, key: string) {
+  _constructFullUrl(reqUrl: string, key: string): string {
     return reqUrl + this._getAPIKeySuffix(reqUrl, key)
   }
 
   /**
    * Resets cache timers in the case that users do not want to cache.
-   * @param {object} timers; an object with <string, int> pairs
+   * @param {object} timers an object with <string, int> pairs
    * @returns {object} an object with <string, 0> pairs
    */
   _disableCache(timers: {
@@ -617,7 +619,24 @@ class Kindred {
     SUMMONER: number,
     TOURNAMENT_STUB: number,
     TOURNAMENT: number
-  }) {
+  }): {
+    CHAMPION: number,
+    CHAMPION_MASTERY: number,
+    CURRENT_GAME: number,
+    FEATURED_GAMES: number,
+    GAME: number,
+    LEAGUE: number,
+    STATIC: number,
+    STATUS: number,
+    MATCH: number,
+    MATCHLIST: number,
+    RUNES_MASTERIES: number,
+    SPECTATOR: number,
+    STATS: number,
+    SUMMONER: number,
+    TOURNAMENT_STUB: number,
+    TOURNAMENT: number
+  } {
     for (const key of Object.keys(timers))
       timers[key] = 0
 
@@ -626,29 +645,36 @@ class Kindred {
 
   /**
    * Validates query arguments passed into options.
-   * @param {object} options; object representing desired query arguments
-   * @param {array} allowed; query parameters (usually in the form of a QUERY_PARAMS constant)
+   * @param {object} options object representing desired query arguments
+   * @param {array} allowed query parameters (usually in the form of a QUERY_PARAMS constant)
    */
-  _verifyOptions(options: any = {}, allowed: Array<any>) {
+  _verifyOptions(options: any = {}, allowed: Array<string>): void {
     const keys = Object.keys(options)
 
     // No need to check if both are empty.
-    if (allowed.length === 0 && keys.length === 0)
+    if (allowed.length === 0 && keys.length === 0) {
       return
+    }
 
     // Check each passed `key` against hard-coded query params.
-    for (const key of keys)
-      if (!allowed.includes(key))
-        throw new Error(chalk.red('Invalid query params! Valid: ' + allowed.toString()))
+    for (const key of keys) {
+      if (!allowed.includes(key)) {
+        throw new Error(
+          chalk.red(
+            `Invalid query params! Valid: ${allowed.toString()}`
+          )
+        )
+      }
+    }
   }
 
   /**
    * Returns API key suffix. This may contain a key if present.
-   * @param {string} url; request url
-   * @param {string} key; api key
+   * @param {string} url request url
+   * @param {string} key api key
    * @returns {string} api key suffix
    */
-  _getAPIKeySuffix(url: string, key?: string) {
+  _getAPIKeySuffix(url: string, key?: string): string {
     return (url.lastIndexOf('?') === -1
       ? '?'
       : '&'

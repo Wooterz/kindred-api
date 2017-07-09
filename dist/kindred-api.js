@@ -916,7 +916,6 @@
         if (this._validName(name)) {
           return name.replace(/\s/g, '').toLowerCase();
         } else {
-          1;
           this._logError(this._validName.name, 'Name ' + chalk.yellow(name) + ' is not valid. Request failed.');
         }
       }
@@ -928,7 +927,9 @@
     }, {
       key: '_cacheData',
       value: function _cacheData(key, ttl, body) {
-        if (validTTL(ttl)) this.cache.set({ key: key, ttl: ttl }, body);
+        if (validTTL(ttl)) {
+          this.cache.set({ key: key, ttl: ttl }, body);
+        }
       }
     }, {
       key: '_makeUrl',
@@ -950,8 +951,8 @@
       value: function _stringifyOptions(options, endUrl) {
         var stringifiedOpts = '';
 
-        var appendKey = function appendKey(str, key, el) {
-          return str + (str ? '&' : '') + (key + '=' + el);
+        var appendKey = function appendKey(str, key, value) {
+          return str + (str ? '&' : '') + (key + '=' + value);
         };
 
         if (endUrl.lastIndexOf('v3') === -1) {
@@ -972,9 +973,9 @@
 
                 try {
                   for (var _iterator4 = options[key][Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-                    var el = _step4.value;
+                    var value = _step4.value;
 
-                    stringifiedOpts = appendKey(stringifiedOpts, key, el);
+                    stringifiedOpts = appendKey(stringifiedOpts, key, value);
                   }
                 } catch (err) {
                   _didIteratorError4 = true;
@@ -1055,7 +1056,9 @@
 
         var keys = Object.keys(options);
 
-        if (allowed.length === 0 && keys.length === 0) return;
+        if (allowed.length === 0 && keys.length === 0) {
+          return;
+        }
 
         var _iteratorNormalCompletion6 = true;
         var _didIteratorError6 = false;
@@ -1065,7 +1068,9 @@
           for (var _iterator6 = keys[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
             var key = _step6.value;
 
-            if (!allowed.includes(key)) throw new Error(chalk.red('Invalid query params! Valid: ' + allowed.toString()));
+            if (!allowed.includes(key)) {
+              throw new Error(chalk.red('Invalid query params! Valid: ' + allowed.toString()));
+            }
           }
         } catch (err) {
           _didIteratorError6 = true;
