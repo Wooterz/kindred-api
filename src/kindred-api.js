@@ -710,7 +710,7 @@ class Kindred {
         const displayUrl = reqUrl + this._getAPIKeySuffix(reqUrl) // no key
         const fullUrl = this._constructFullUrl(reqUrl, this.key)
 
-        this.cache.get({ key: reqUrl, hi: 'dad' }, (err, data) => {
+        this.cache.get({ key: reqUrl }, (err, data) => {
           if (data) {
             if (this.debug) {
               const url = this.showKey ? fullUrl : reqUrl
