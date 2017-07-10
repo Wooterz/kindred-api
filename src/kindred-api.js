@@ -33,6 +33,12 @@ import printResponseDebug from './helpers/print-response-debug'
 import shouldRetry from './helpers/should-retry'
 import validTTL from './helpers/valid-ttl'
 
+import type {
+  cacheGet,
+  cacheSet,
+  callback
+} from './constants/flow-types'
+
 const ERROR_THRESHOLD = 400 // res code >= 400 = error
 const SECOND = 1000
 
@@ -102,8 +108,8 @@ class Kindred {
     euw: Array<any>,
   }
   cache: {
-    get: (data: { key: string }, callback) => void,
-    set: (data: { key: string, ttl: number }, any) => void
+    get: cacheGet,
+    set: cacheSet
   }
   spread: boolean
 
@@ -704,7 +710,7 @@ class Kindred {
         const displayUrl = reqUrl + this._getAPIKeySuffix(reqUrl) // no key
         const fullUrl = this._constructFullUrl(reqUrl, this.key)
 
-        this.cache.get({ key: reqUrl }, (err, data) => {
+        this.cache.get({ key: reqUrl, hi: 'dad' }, (err, data) => {
           if (data) {
             if (this.debug) {
               const url = this.showKey ? fullUrl : reqUrl
@@ -2882,7 +2888,6 @@ function print(err: string, data: Object) {
   else console.log(data)
 }
 
-type callback = (?string, ?Object) => void
 const undefined_ = (undefined: any)
 
 export default {

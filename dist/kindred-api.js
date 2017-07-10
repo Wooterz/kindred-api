@@ -19,6 +19,23 @@
     return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
   };
 
+  var _responseStrings;
+
+  function _defineProperty(obj, key, value) {
+    if (key in obj) {
+      Object.defineProperty(obj, key, {
+        value: value,
+        enumerable: true,
+        configurable: true,
+        writable: true
+      });
+    } else {
+      obj[key] = value;
+    }
+
+    return obj;
+  }
+
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
       throw new TypeError("Cannot call a class as a function");
@@ -67,7 +84,7 @@
       key: 'set',
       value: function set(args, value) {
         this.cache[args.key] = {
-          expires: args.ttl ? this.setExp(Date.now(), args.ttl) : null,
+          expires: this.setExp(Date.now(), args.ttl),
           value: value
         };
       }
@@ -356,22 +373,22 @@
   };
 
   var services = {
-    'CHAMPION': 'platform',
-    'CHAMPION_MASTERY': 'champion-mastery',
-    'GAME': null,
-    'LEAGUE': 'league',
-    'STATUS': 'status',
-    'MASTERIES': 'platform',
-    'MATCH': 'match',
-    'MATCHLIST': null,
-    'RUNES': 'platform',
-    'RUNES_MASTERIES': 'platform',
-    'SPECTATOR': 'spectator',
-    'STATIC_DATA': 'static-data',
-    'STATS': null,
-    'SUMMONER': 'summoner',
-    'TOURNAMENT_STUB': 'tournament-stub',
-    'TOURNAMENT': 'tournament'
+    CHAMPION: 'platform',
+    CHAMPION_MASTERY: 'champion-mastery',
+    GAME: null,
+    LEAGUE: 'league',
+    STATUS: 'status',
+    MASTERIES: 'platform',
+    MATCH: 'match',
+    MATCHLIST: null,
+    RUNES: 'platform',
+    RUNES_MASTERIES: 'platform',
+    SPECTATOR: 'spectator',
+    STATIC_DATA: 'static-data',
+    STATS: null,
+    SUMMONER: 'summoner',
+    TOURNAMENT_STUB: 'tournament-stub',
+    TOURNAMENT: 'tournament'
   };
 
   var versions = {
@@ -395,32 +412,9 @@
   var re = XRegExp('^[0-9\\p{L} _\\.]+$');
 
   var check = function check(region) {
-    var _iteratorNormalCompletion = true;
-    var _didIteratorError = false;
-    var _iteratorError = undefined;
-
-    try {
-      for (var _iterator = Object.keys(regions)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-        var r = _step.value;
-
-        if (regions[r] === region) return true;
-      }
-    } catch (err) {
-      _didIteratorError = true;
-      _iteratorError = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion && _iterator.return) {
-          _iterator.return();
-        }
-      } finally {
-        if (_didIteratorError) {
-          throw _iteratorError;
-        }
-      }
-    }
-
-    return false;
+    return Object.keys(regions).some(function (key) {
+      return regions[key] === region;
+    });
   };
 
   var checkAllHelpers = {
@@ -453,22 +447,14 @@
     return typeof item === 'function';
   };
 
-  var responseStrings = {
-    200: 'Success',
-    400: 'Bad Request',
-    401: 'Unauthorized',
-    403: 'Forbidden',
-    404: 'Data Not Found',
-    405: 'Method not allowed',
-    415: 'Unsupported Media Type',
-    429: 'Rate Limit Exceeded',
-    500: 'Internal Service Error',
-    503: 'Service Unavailable',
-    504: 'Gateway Timeout'
+  var responseStrings = (_responseStrings = {}, _defineProperty(_responseStrings, 200, 'Success'), _defineProperty(_responseStrings, 400, 'Bad Request'), _defineProperty(_responseStrings, 401, 'Unauthorized'), _defineProperty(_responseStrings, 403, 'Forbidden'), _defineProperty(_responseStrings, 404, 'Data Not Found'), _defineProperty(_responseStrings, 405, 'Method not allowed'), _defineProperty(_responseStrings, 415, 'Unsupported Media Type'), _defineProperty(_responseStrings, 429, 'Rate Limit Exceeded'), _defineProperty(_responseStrings, 500, 'Internal Service Error'), _defineProperty(_responseStrings, 503, 'Service Unavailable'), _defineProperty(_responseStrings, 504, 'Gateway Timeout'), _responseStrings);
+
+  var get = function get(code) {
+    return responseStrings[code];
   };
 
   var getResponseMessage = function getResponseMessage(code) {
-    return responseStrings[code] || '';
+    return get(code) || '';
   };
 
   var statusCodeBisector = [200, 400, 500];
@@ -480,10 +466,10 @@
     if (statusCode >= statusCodeBisector[0] && statusCode < statusCodeBisector[1]) return chalk$1.green(statusCode);else if (statusCode >= statusCodeBisector[1] && statusCode < statusCodeBisector[2]) return chalk$1.red(msg);else return chalk$1.bold.red(msg);
   };
 
-  var printResponseDebug = function printResponseDebug(response, statusMessage, reqUrl, headers) {
+  var printResponseDebug = function printResponseDebug(response, statusMessage, reqUrl, showHeaders) {
     console.log(statusMessage, '@', reqUrl);
 
-    if (headers) {
+    if (showHeaders) {
       console.log({
         'x-rate-limit-type': response.headers['x-rate-limit-type'],
         'x-app-rate-limit-count': response.headers['x-app-rate-limit-count'],
@@ -591,27 +577,27 @@
 
         this.numberOfRetriesBeforeBreak = this.retryOptions.numberOfRetriesBeforeBreak;
 
-        var _iteratorNormalCompletion2 = true;
-        var _didIteratorError2 = false;
-        var _iteratorError2 = undefined;
+        var _iteratorNormalCompletion = true;
+        var _didIteratorError = false;
+        var _iteratorError = undefined;
 
         try {
-          for (var _iterator2 = Object.keys(regions)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-            var region = _step2.value;
+          for (var _iterator = Object.keys(regions)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            var region = _step.value;
 
             this.limits[regions[region]] = [new RateLimit(limits$$1[0][0], limits$$1[0][1]), new RateLimit(limits$$1[1][0], limits$$1[1][1]), this.spread ? new RateLimit(limits$$1[0][0] / 10, 0.5) : null];
           }
         } catch (err) {
-          _didIteratorError2 = true;
-          _iteratorError2 = err;
+          _didIteratorError = true;
+          _iteratorError = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion2 && _iterator2.return) {
-              _iterator2.return();
+            if (!_iteratorNormalCompletion && _iterator.return) {
+              _iterator.return();
             }
           } finally {
-            if (_didIteratorError2) {
-              throw _iteratorError2;
+            if (_didIteratorError) {
+              throw _iteratorError;
             }
           }
         }
@@ -942,7 +928,9 @@
         var oldUrl = 'https://' + region + '.api.riotgames.com/' + oldPrefix + encodedQuery;
         var newUrl = 'https://' + platformIds[regions$1[region]].toLowerCase() + '.' + base + '/' + prefix + encodedQuery;
 
-        if (newUrl.lastIndexOf('v3') === -1) return oldUrl;
+        if (newUrl.lastIndexOf('v3') === -1) {
+          return oldUrl;
+        }
 
         return newUrl;
       }
@@ -958,36 +946,36 @@
         if (endUrl.lastIndexOf('v3') === -1) {
           stringifiedOpts = queryString.stringify(options);
         } else {
-          var _iteratorNormalCompletion3 = true;
-          var _didIteratorError3 = false;
-          var _iteratorError3 = undefined;
+          var _iteratorNormalCompletion2 = true;
+          var _didIteratorError2 = false;
+          var _iteratorError2 = undefined;
 
           try {
-            for (var _iterator3 = Object.keys(options)[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-              var key = _step3.value;
+            for (var _iterator2 = Object.keys(options)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+              var key = _step2.value;
 
               if (Array.isArray(options[key])) {
-                var _iteratorNormalCompletion4 = true;
-                var _didIteratorError4 = false;
-                var _iteratorError4 = undefined;
+                var _iteratorNormalCompletion3 = true;
+                var _didIteratorError3 = false;
+                var _iteratorError3 = undefined;
 
                 try {
-                  for (var _iterator4 = options[key][Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-                    var value = _step4.value;
+                  for (var _iterator3 = options[key][Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                    var value = _step3.value;
 
                     stringifiedOpts = appendKey(stringifiedOpts, key, value);
                   }
                 } catch (err) {
-                  _didIteratorError4 = true;
-                  _iteratorError4 = err;
+                  _didIteratorError3 = true;
+                  _iteratorError3 = err;
                 } finally {
                   try {
-                    if (!_iteratorNormalCompletion4 && _iterator4.return) {
-                      _iterator4.return();
+                    if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                      _iterator3.return();
                     }
                   } finally {
-                    if (_didIteratorError4) {
-                      throw _iteratorError4;
+                    if (_didIteratorError3) {
+                      throw _iteratorError3;
                     }
                   }
                 }
@@ -996,16 +984,16 @@
               }
             }
           } catch (err) {
-            _didIteratorError3 = true;
-            _iteratorError3 = err;
+            _didIteratorError2 = true;
+            _iteratorError2 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion3 && _iterator3.return) {
-                _iterator3.return();
+              if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                _iterator2.return();
               }
             } finally {
-              if (_didIteratorError3) {
-                throw _iteratorError3;
+              if (_didIteratorError2) {
+                throw _iteratorError2;
               }
             }
           }
@@ -1021,27 +1009,27 @@
     }, {
       key: '_disableCache',
       value: function _disableCache(timers) {
-        var _iteratorNormalCompletion5 = true;
-        var _didIteratorError5 = false;
-        var _iteratorError5 = undefined;
+        var _iteratorNormalCompletion4 = true;
+        var _didIteratorError4 = false;
+        var _iteratorError4 = undefined;
 
         try {
-          for (var _iterator5 = Object.keys(timers)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-            var key = _step5.value;
+          for (var _iterator4 = Object.keys(timers)[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+            var key = _step4.value;
 
             timers[key] = 0;
           }
         } catch (err) {
-          _didIteratorError5 = true;
-          _iteratorError5 = err;
+          _didIteratorError4 = true;
+          _iteratorError4 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion5 && _iterator5.return) {
-              _iterator5.return();
+            if (!_iteratorNormalCompletion4 && _iterator4.return) {
+              _iterator4.return();
             }
           } finally {
-            if (_didIteratorError5) {
-              throw _iteratorError5;
+            if (_didIteratorError4) {
+              throw _iteratorError4;
             }
           }
         }
@@ -1060,29 +1048,29 @@
           return;
         }
 
-        var _iteratorNormalCompletion6 = true;
-        var _didIteratorError6 = false;
-        var _iteratorError6 = undefined;
+        var _iteratorNormalCompletion5 = true;
+        var _didIteratorError5 = false;
+        var _iteratorError5 = undefined;
 
         try {
-          for (var _iterator6 = keys[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-            var key = _step6.value;
+          for (var _iterator5 = keys[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+            var key = _step5.value;
 
             if (!allowed.includes(key)) {
               throw new Error(chalk.red('Invalid query params! Valid: ' + allowed.toString()));
             }
           }
         } catch (err) {
-          _didIteratorError6 = true;
-          _iteratorError6 = err;
+          _didIteratorError5 = true;
+          _iteratorError5 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion6 && _iterator6.return) {
-              _iterator6.return();
+            if (!_iteratorNormalCompletion5 && _iterator5.return) {
+              _iterator5.return();
             }
           } finally {
-            if (_didIteratorError6) {
-              throw _iteratorError6;
+            if (_didIteratorError5) {
+              throw _iteratorError5;
             }
           }
         }
@@ -1115,7 +1103,7 @@
             var displayUrl = reqUrl + _this._getAPIKeySuffix(reqUrl);
             var fullUrl = _this._constructFullUrl(reqUrl, _this.key);
 
-            _this.cache.get({ key: reqUrl }, function (err, data) {
+            _this.cache.get({ key: reqUrl, hi: 'dad' }, function (err, data) {
               if (data) {
                 if (_this.debug) {
                   var url = _this.showKey ? fullUrl : reqUrl;

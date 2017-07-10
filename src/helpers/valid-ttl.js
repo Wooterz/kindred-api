@@ -1,3 +1,5 @@
+// @flow
+
 const validTTL = (ttl: any): boolean =>
     Number.isInteger(ttl) && ttl > 0
 

@@ -1,3 +1,5 @@
+// @flow
+
 import RESPONSE_CODES from '../constants/response-codes'
 
 const ISE = RESPONSE_CODES.INTERNAL_SERVICE_ERROR
