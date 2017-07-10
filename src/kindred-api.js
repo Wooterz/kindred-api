@@ -506,6 +506,7 @@ class Kindred {
    * @returns {string} sanitized name
    */
   _sanitizeName(name: string): string | void {
+    return 3 
     if (this._validName(name)) {
       return name.replace(/\s/g, '').toLowerCase()
     } else {
