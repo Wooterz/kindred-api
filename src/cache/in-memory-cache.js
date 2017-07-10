@@ -23,7 +23,7 @@ class InMemoryCache {
 
   set(args: { key: string, ttl: number }, value: any): void {
     this.cache[args.key] = {
-      expires: this.setExp(Date.now(), args.ttl),
+      expires: args.ttl ? this.setExp(Date.now(), args.ttl) : null,
       value: value
     }
   }
