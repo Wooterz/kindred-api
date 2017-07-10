@@ -537,7 +537,7 @@ class Kindred {
    * @param {string} region region string
    * @returns {string} a request url
    */
-  _makeUrl(query: string, region: string) {
+  _makeUrl(query: string, region: string): string {
     const oldPrefix = `api/lol/${region}/`
     const prefix = 'lol/'
     const base = 'api.riotgames.com'
@@ -547,8 +547,9 @@ class Kindred {
     const newUrl = `https://${PLATFORM_IDS[REGIONS_BACK[region]].toLowerCase()}.${base}/${prefix}${encodedQuery}`
 
     // TODO: Remove this when Riot has deprecated the endpoints.
-    if (newUrl.lastIndexOf('v3') === -1)
+    if (newUrl.lastIndexOf('v3') === -1) {
       return oldUrl
+    }
 
     return newUrl
   }
@@ -637,8 +638,9 @@ class Kindred {
     TOURNAMENT_STUB: number,
     TOURNAMENT: number
   } {
-    for (const key of Object.keys(timers))
+    for (const key of Object.keys(timers)) {
       timers[key] = 0
+    }
 
     return timers
   }
