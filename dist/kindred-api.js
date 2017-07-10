@@ -84,7 +84,7 @@
       key: 'set',
       value: function set(args, value) {
         this.cache[args.key] = {
-          expires: this.setExp(Date.now(), args.ttl),
+          expires: args.ttl ? this.setExp(Date.now(), args.ttl) : null,
           value: value
         };
       }
@@ -201,9 +201,9 @@
     TOURNAMENT: cacheTimers.HOUR };
 
   var limits = {
-    'DEV': [[10, 10], [500, 600]],
+    DEV: [[10, 10], [500, 600]],
 
-    'PROD': [[500, 10], [30000, 600]]
+    PROD: [[500, 10], [30000, 600]]
   };
 
   var platformIds = {
@@ -1103,7 +1103,7 @@
             var displayUrl = reqUrl + _this._getAPIKeySuffix(reqUrl);
             var fullUrl = _this._constructFullUrl(reqUrl, _this.key);
 
-            _this.cache.get({ key: reqUrl, hi: 'dad' }, function (err, data) {
+            _this.cache.get({ key: reqUrl }, function (err, data) {
               if (data) {
                 if (_this.debug) {
                   var url = _this.showKey ? fullUrl : reqUrl;
