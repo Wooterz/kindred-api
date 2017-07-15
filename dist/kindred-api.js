@@ -472,7 +472,9 @@
     if (showHeaders) {
       console.log({
         'x-rate-limit-type': response.headers['x-rate-limit-type'],
+        'x-app-rate-limit': response.headers['x-app-rate-limit'],
         'x-app-rate-limit-count': response.headers['x-app-rate-limit-count'],
+        'x-method-rate-limit': response.headers['x-method-rate-limit'],
         'x-method-rate-limit-count': response.headers['x-method-rate-limit-count'],
         'x-rate-limit-count': response.headers['x-rate-limit-count'],
         'retry-after': response.headers['retry-after']
